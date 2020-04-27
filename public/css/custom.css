@@ -1,0 +1,12 @@
+.remove-item{
+    cursor: pointer;
+    margin-left: 5px;
+    font-size: 20px;
+}
+
+.task-content{
+    height: auto !important;
+}
+.cursor{
+    cursor: move;
+}
