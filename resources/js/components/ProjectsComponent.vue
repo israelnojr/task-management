@@ -13,7 +13,7 @@
                             v-model="form.title" @keyup.enter="createProject" :class="{ 'is-invalid': form.errors.has('title') }">
                        <has-error :form="form" field="title"></has-error>
                         <div class="mb-5"></div>
-                        <draggable :list="projects" :options="{animation:200}" :element="'div'">
+                        <draggable :list="projects" :options="{animation:300}" :element="'div'">
                             <div v-for="(project) in projects" :key="project.id" class="d-flex cursor">
                                 <div v-if="!project.editing" @dblclick="editProject(project)" class="form-control form-control-md mb-2">{{project.title}}</div>
                                 <input v-else type="text" class="form-control form-control-md mb-2" placeholder="Edit Project" 
@@ -39,7 +39,7 @@
                     title: '',
                     editing: false
                  }),
-                projects: {}
+                projects: []
             }
         },
         directives: {

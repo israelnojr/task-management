@@ -6,13 +6,14 @@
                 <button @click="openModal" type="button" class="btn btn-primary btn-sm">Create Task</button>
             </div>
             <div class="card-body">
-                <select v-model="form.projectId" @click="loadTask" class="form-control form-control-sm mb-5">
+                <select v-model="form.projectId" @change="getTaskByProject($event)" @click="loadProjects" class="form-control form-control-sm mb-5">
                     <option value="" disabled selected>Choose Project to see their TASKS</option>
-                    <option v-for="project in projects" :key="project.id" v-bind:value="project.id" >{{project.title}}</option>
+                    <option v-for="project in projects" :key="project.id" v-bind:value="project.id">{{project.title}}</option>
                 </select>
-
-                <draggable :list="tasks" :options="{animation:300}" :element="'div'">
-                    <div v-for="(task) in tasks" :key="task.id" class="d-flex cursor">
+                
+                <draggable :list="tasks" :options="{animation:300}" :element="'div'" @change="updatePriority">
+                    <div v-for="(task) in tasks" :key="task.id" class="d-flex justify-content-center align-items-center cursor">
+                        <span v-if="task.priority <= 5" class="badge badge-danger badge-sm priority mr-2" @click="removeTask(task)">Priority</span>
                         <div v-if="!task.editing" @dblclick="editTask(task)" class="form-control mb-2 task-content"> {{task.title}}</div>
                         <textarea v-else type="text" cols="5" rows="5" class="form-control mb-2"
                             v-model="form.title" @blur="doneEdit(task)" @keyup.enter="doneEdit(task)" v-focus @keyup.esc="cancelEdit(task)"></textarea>
@@ -74,18 +75,14 @@
             }
         },
         methods:{
-            getTaskByProject(){
-                this.form.post('api/task').then(() =>{
-                    console.log(this.form.projectId)
-                }).catch((error) =>{
-                    console.log(error)
-                })
+            getTaskByProject($event){
+                axios.get('api/task-by-project/'+this.form.projectId).then(({ data })=> (this.tasks = data));
             },
              loadProjects(){
                 axios.get("api/project").then(({ data })=> (this.projects = data));
             },
-            loadTask(){
-                axios.get("api/task").then(({ data })=> (this.tasks = data));
+            loadTask(project){
+                axios.get('api/task').then(({ data })=> (this.tasks = data));
             },            
             createTask(){
                if(this.form.title == ''){
@@ -101,7 +98,7 @@
             },
             removeTask(task){
                axios.delete('api/task/'+task.id).then((response) => { 
-                    this.loadTask();                    
+                    this.loadTask()                   
                     console.log(response)                 
                 }).catch((error)=>{
                    console.log(error)
@@ -120,7 +117,7 @@
                    task.title = this.beforeEditCache
                 }
                 this.form.put('api/task/'+task.id).then(() =>{
-                    this.loadTask()
+                    this.getTaskByProject()
                 }).catch((error) =>{
                     console.log(error)
                 })
@@ -128,6 +125,12 @@
             },
             openModal(){
                 $('#AddNew').modal('show')
+            },
+            updatePriority() {
+                this.tasks.map((task, index) =>{
+                    task.priority = index + 1
+                })
+                axios.put('api/task/update-priority/',{tasks: this.tasks})
             }
         },
         created(){

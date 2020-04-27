@@ -1948,7 +1948,7 @@ __webpack_require__.r(__webpack_exports__);
         title: '',
         editing: false
       }),
-      projects: {}
+      projects: []
     };
   },
   directives: {
@@ -2092,6 +2092,7 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
     return {
@@ -2113,28 +2114,27 @@ __webpack_require__.r(__webpack_exports__);
     }
   },
   methods: {
-    getTaskByProject: function getTaskByProject() {
+    getTaskByProject: function getTaskByProject($event) {
       var _this = this;
 
-      this.form.post('api/task').then(function () {
-        console.log(_this.form.projectId);
-      })["catch"](function (error) {
-        console.log(error);
+      axios.get('api/task-by-project/' + this.form.projectId).then(function (_ref) {
+        var data = _ref.data;
+        return _this.tasks = data;
       });
     },
     loadProjects: function loadProjects() {
       var _this2 = this;
 
-      axios.get("api/project").then(function (_ref) {
-        var data = _ref.data;
+      axios.get("api/project").then(function (_ref2) {
+        var data = _ref2.data;
         return _this2.projects = data;
       });
     },
-    loadTask: function loadTask() {
+    loadTask: function loadTask(project) {
       var _this3 = this;
 
-      axios.get("api/task").then(function (_ref2) {
-        var data = _ref2.data;
+      axios.get('api/task').then(function (_ref3) {
+        var data = _ref3.data;
         return _this3.tasks = data;
       });
     },
@@ -2180,7 +2180,7 @@ __webpack_require__.r(__webpack_exports__);
       }
 
       this.form.put('api/task/' + task.id).then(function () {
-        _this6.loadTask();
+        _this6.getTaskByProject();
       })["catch"](function (error) {
         console.log(error);
       });
@@ -2188,6 +2188,14 @@ __webpack_require__.r(__webpack_exports__);
     },
     openModal: function openModal() {
       $('#AddNew').modal('show');
+    },
+    updatePriority: function updatePriority() {
+      this.tasks.map(function (task, index) {
+        task.priority = index + 1;
+      });
+      axios.put('api/task/update-priority/', {
+        tasks: this.tasks
+      });
     }
   },
   created: function created() {
@@ -42643,7 +42651,7 @@ var render = function() {
                 {
                   attrs: {
                     list: _vm.projects,
-                    options: { animation: 200 },
+                    options: { animation: 300 },
                     element: "div"
                   }
                 },
@@ -42812,22 +42820,27 @@ var render = function() {
               ],
               staticClass: "form-control form-control-sm mb-5",
               on: {
-                click: _vm.loadTask,
-                change: function($event) {
-                  var $$selectedVal = Array.prototype.filter
-                    .call($event.target.options, function(o) {
-                      return o.selected
-                    })
-                    .map(function(o) {
-                      var val = "_value" in o ? o._value : o.value
-                      return val
-                    })
-                  _vm.$set(
-                    _vm.form,
-                    "projectId",
-                    $event.target.multiple ? $$selectedVal : $$selectedVal[0]
-                  )
-                }
+                change: [
+                  function($event) {
+                    var $$selectedVal = Array.prototype.filter
+                      .call($event.target.options, function(o) {
+                        return o.selected
+                      })
+                      .map(function(o) {
+                        var val = "_value" in o ? o._value : o.value
+                        return val
+                      })
+                    _vm.$set(
+                      _vm.form,
+                      "projectId",
+                      $event.target.multiple ? $$selectedVal : $$selectedVal[0]
+                    )
+                  },
+                  function($event) {
+                    return _vm.getTaskByProject($event)
+                  }
+                ],
+                click: _vm.loadProjects
               }
             },
             [
@@ -42855,91 +42868,116 @@ var render = function() {
                 list: _vm.tasks,
                 options: { animation: 300 },
                 element: "div"
-              }
+              },
+              on: { change: _vm.updatePriority }
             },
             _vm._l(_vm.tasks, function(task) {
-              return _c("div", { key: task.id, staticClass: "d-flex cursor" }, [
-                !task.editing
-                  ? _c(
-                      "div",
-                      {
-                        staticClass: "form-control mb-2 task-content",
-                        on: {
-                          dblclick: function($event) {
-                            return _vm.editTask(task)
-                          }
-                        }
-                      },
-                      [_vm._v(" " + _vm._s(task.title))]
-                    )
-                  : _c("textarea", {
-                      directives: [
+              return _c(
+                "div",
+                {
+                  key: task.id,
+                  staticClass:
+                    "d-flex justify-content-center align-items-center cursor"
+                },
+                [
+                  task.priority <= 5
+                    ? _c(
+                        "span",
                         {
-                          name: "model",
-                          rawName: "v-model",
-                          value: _vm.form.title,
-                          expression: "form.title"
-                        },
-                        { name: "focus", rawName: "v-focus" }
-                      ],
-                      staticClass: "form-control mb-2",
-                      attrs: { type: "text", cols: "5", rows: "5" },
-                      domProps: { value: _vm.form.title },
-                      on: {
-                        blur: function($event) {
-                          return _vm.doneEdit(task)
-                        },
-                        keyup: [
-                          function($event) {
-                            if (
-                              !$event.type.indexOf("key") &&
-                              _vm._k(
-                                $event.keyCode,
-                                "enter",
-                                13,
-                                $event.key,
-                                "Enter"
-                              )
-                            ) {
-                              return null
+                          staticClass:
+                            "badge badge-danger badge-sm priority mr-2",
+                          on: {
+                            click: function($event) {
+                              return _vm.removeTask(task)
                             }
+                          }
+                        },
+                        [_vm._v("Priority")]
+                      )
+                    : _vm._e(),
+                  _vm._v(" "),
+                  !task.editing
+                    ? _c(
+                        "div",
+                        {
+                          staticClass: "form-control mb-2 task-content",
+                          on: {
+                            dblclick: function($event) {
+                              return _vm.editTask(task)
+                            }
+                          }
+                        },
+                        [_vm._v(" " + _vm._s(task.title))]
+                      )
+                    : _c("textarea", {
+                        directives: [
+                          {
+                            name: "model",
+                            rawName: "v-model",
+                            value: _vm.form.title,
+                            expression: "form.title"
+                          },
+                          { name: "focus", rawName: "v-focus" }
+                        ],
+                        staticClass: "form-control mb-2",
+                        attrs: { type: "text", cols: "5", rows: "5" },
+                        domProps: { value: _vm.form.title },
+                        on: {
+                          blur: function($event) {
                             return _vm.doneEdit(task)
                           },
-                          function($event) {
-                            if (
-                              !$event.type.indexOf("key") &&
-                              _vm._k($event.keyCode, "esc", 27, $event.key, [
-                                "Esc",
-                                "Escape"
-                              ])
-                            ) {
-                              return null
+                          keyup: [
+                            function($event) {
+                              if (
+                                !$event.type.indexOf("key") &&
+                                _vm._k(
+                                  $event.keyCode,
+                                  "enter",
+                                  13,
+                                  $event.key,
+                                  "Enter"
+                                )
+                              ) {
+                                return null
+                              }
+                              return _vm.doneEdit(task)
+                            },
+                            function($event) {
+                              if (
+                                !$event.type.indexOf("key") &&
+                                _vm._k($event.keyCode, "esc", 27, $event.key, [
+                                  "Esc",
+                                  "Escape"
+                                ])
+                              ) {
+                                return null
+                              }
+                              return _vm.cancelEdit(task)
                             }
-                            return _vm.cancelEdit(task)
+                          ],
+                          input: function($event) {
+                            if ($event.target.composing) {
+                              return
+                            }
+                            _vm.$set(_vm.form, "title", $event.target.value)
                           }
-                        ],
-                        input: function($event) {
-                          if ($event.target.composing) {
-                            return
-                          }
-                          _vm.$set(_vm.form, "title", $event.target.value)
+                        }
+                      }),
+                  _vm._v(" "),
+                  _c(
+                    "div",
+                    {
+                      staticClass: "remove-item",
+                      on: {
+                        click: function($event) {
+                          return _vm.removeTask(task)
                         }
                       }
-                    }),
-                _vm._v(" "),
-                _c(
-                  "div",
-                  {
-                    staticClass: "remove-item",
-                    on: {
-                      click: function($event) {
-                        return _vm.removeTask(task)
-                      }
-                    }
-                  },
-                  [_vm._v("×")]
-                )
-              ])
+                    },
+                    [_vm._v("×")]
+                  )
+                ]
+              )
             }),
             0
           )

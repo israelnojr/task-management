@@ -19,4 +19,6 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 Route::apiResources(['project' => 'ProjectController'], ['except' => ['show', 'create', 'edit']]);
+Route::get('task-by-project/{project}','TaskController@getTaskByProject');
+Route::put('task/update-priority/','TaskController@updatePriority');
 Route::apiResources(['task' => 'TaskController'], ['except' => ['show', 'create', 'edit']]);

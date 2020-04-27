@@ -10,3 +10,12 @@
 .cursor{
     cursor: move;
 }
+
+.priority{
+    height: 20px;
+    width: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 3px !important;
+}
